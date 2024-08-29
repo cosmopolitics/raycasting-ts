@@ -1,11 +1,12 @@
 "use strict";
-const eps = 1e-3;
-const gridrows = 10;
-const gridcols = 10;
+const eps = 1e-6;
 class vec2 {
     constructor(x, y) {
         this.x = x;
         this.y = y;
+    }
+    static zero() {
+        return new vec2(0, 0);
     }
     add(that) {
         return new vec2(this.x + that.x, this.y + that.y);
@@ -38,8 +39,6 @@ class vec2 {
         return [this.x, this.y];
     }
 }
-const gridsize = new vec2(gridcols, gridrows);
-const scene = Array(gridrows).fill(0).map(() => Array(gridcols).fill(0));
 function fillcircle(ctx, center, radius) {
     ctx.fillStyle = "purple";
     ctx.beginPath();
@@ -93,14 +92,24 @@ function raystep(p1, p2) {
 function canvassize(ctx) {
     return new vec2(ctx.canvas.width, ctx.canvas.height);
 }
-function grid(ctx, p2) {
+function scenesize(scene) {
+    const y = scene.length;
+    let x = Number.MIN_VALUE;
+    for (let row of scene) {
+        x = Math.max(x, row.length);
+    }
+    return new vec2(x, y);
+}
+function minimap(ctx, p1, p2, position, size, scene) {
     ctx.reset();
     ctx.fillStyle = "#181818";
     ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-    ctx.scale(ctx.canvas.width / gridcols, ctx.canvas.height / gridrows);
+    const gridsize = scenesize(scene);
+    ctx.scale(...size.div(gridsize).array());
+    ctx.translate(...position.array());
     ctx.lineWidth = 0.01;
-    for (let y = 0; y < gridrows; y++) {
-        for (let x = 0; x < gridcols; x++) {
+    for (let y = 0; y < gridsize.y; y++) {
+        for (let x = 0; x < gridsize.x; x++) {
             if (scene[y][x] !== 0) {
                 ctx.fillStyle = "#303030";
                 ctx.fillRect(x, y, 1, 1);
@@ -108,13 +117,12 @@ function grid(ctx, p2) {
         }
     }
     ctx.strokeStyle = "#303030";
-    for (let i = 0; i <= gridcols; i++) {
-        strokeline(ctx, new vec2(i, 0), new vec2(i, gridrows));
+    for (let i = 0; i <= gridsize.x; i++) {
+        strokeline(ctx, new vec2(i, 0), new vec2(i, gridsize.y));
     }
-    for (let i = 0; i <= gridrows; i++) {
-        strokeline(ctx, new vec2(0, i), new vec2(gridcols, i));
+    for (let i = 0; i <= gridsize.y; i++) {
+        strokeline(ctx, new vec2(0, i), new vec2(gridsize.x, i));
     }
-    let p1 = new vec2(gridcols * 0.5, gridrows * 0.5);
     ctx.fillStyle = "purple";
     fillcircle(ctx, p1, 0.2);
     if (p2 !== undefined) {
@@ -134,25 +142,32 @@ function grid(ctx, p2) {
     }
 }
 (() => {
-    scene[1][1] = 1;
+    let scene = [
+        [0, 0, 1, 1, 0, 0, 0],
+        [0, 0, 0, 1, 0, 0, 0],
+        [0, 1, 1, 1, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0],
+    ];
     const game = document.getElementById("game");
     if (game === null) {
         throw new Error("no game found ");
     }
-    game.width = 800;
-    game.height = 800;
     const ctx = game.getContext("2d");
     if (ctx === null) {
         throw new Error("2d ctx is not supported");
     }
     // p2 follows the mouse
+    let p1 = scenesize(scene).mul(new vec2(0.43, 0.33));
     let p2 = undefined;
     game.addEventListener("mousemove", (mouseevent) => {
         p2 = new vec2(mouseevent.offsetX, mouseevent.offsetY)
             .div(canvassize(ctx))
-            .mul(new vec2(gridcols, gridrows));
-        grid(ctx, p2);
+            .mul(scenesize(scene));
+        minimap(ctx, p1, p2, vec2.zero(), canvassize(ctx), scene);
     });
-    grid(ctx, p2);
+    minimap(ctx, p1, p2, vec2.zero(), canvassize(ctx), scene);
     console.log("hellop");
 })();
