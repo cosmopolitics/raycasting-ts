@@ -5,6 +5,34 @@ const fov = Math.PI*0.5
 const resol = 400;
 const player_speed = 2;
 
+class Color {
+  r: number;
+  g: number;
+  b: number;
+  a: number;
+  constructor(r:number,g:number,b:number,a:number) {
+    this.r = r;
+    this.g = g;
+    this.b = b;
+    this.a = a;
+  }
+  tostring(): string {
+     return `rgba(`
+       + `${Math.floor(this.r*255)},`
+       + `${Math.floor(this.g*255)},`
+       + `${Math.floor(this.b*255)},`
+       + `${this.a})`
+  }
+  brightness(factor: number): Color {
+    return new Color(factor*this.r, factor*this.g, factor*this.b, this.a);
+  }
+  static red(): Color {return new Color(1,0,0,1);}
+  static green(): Color {return new Color(0,1,0,1);}
+  static blue(): Color {return new Color(0,0,1,1);}
+  static yellow(): Color {return new Color(1,1,0,1);}
+  static purple(): Color {return new Color(1,0,1,1);}
+  static cyan(): Color {return new Color(0,1,1,1);}
+}
 
 class vec2 {
   x: number;
@@ -135,7 +163,7 @@ function canvassize(ctx: CanvasRenderingContext2D): vec2 {
   return new vec2(ctx.canvas.width, ctx.canvas.height);
 }
 
-type Scene = Array<Array<string | null>>;
+type Scene = Array<Array<Color | null>>;
 
 function scenesize(scene: Scene): vec2 {
   const y = scene.length;
@@ -184,7 +212,7 @@ function renderminimap(ctx: CanvasRenderingContext2D, player: Player , position:
     for(let x = 0; x < gridsize.x; x++) {
       const color = scene[y][x];
       if (color !== null) {
-        ctx.fillStyle = color;
+        ctx.fillStyle = color.tostring();
         ctx.fillRect(x,y,1,1);
       }
     }
@@ -226,7 +254,7 @@ function renderscene(ctx: CanvasRenderingContext2D, player: Player, scene: Scene
         const d = vec2.fromangle(player.direction);
 
         const stripheight = ctx.canvas.height/v.dot(d);
-        ctx.fillStyle = color;
+        ctx.fillStyle = color.brightness(1/v.dot(d)).tostring();
         ctx.fillRect(x*stripwidth, (ctx.canvas.height - stripheight)*0.5
                      , stripwidth, stripheight);
       }
@@ -260,9 +288,9 @@ function rendergame(ctx: CanvasRenderingContext2D, player: Player, scene: Scene)
   let scene = [
     [null, null, null, null, null, null, null, null, null, null],
     [null, null, null, null, null, null, null, null, null, null],
-    [null, null, null, "cyan", "purple", null, null, null, null, null],
-    [null, null, null, null, "white", null, null, null, null, null],
-    [null, null, "red", "green", "blue", null, null, null, null, null],
+    [null, null, null, Color.cyan(), Color.purple(), null, null, null, null, null],
+    [null, null, null, null, Color.yellow(), null, null, null, null, null],
+    [null, null, Color.red(), Color.green(), Color.blue(), null, null, null, null, null],
     [null, null, null, null, null, null, null, null, null, null],
     [null, null, null, null, null, null, null, null, null, null],
     [null, null, null, null, null, null, null, null, null, null],

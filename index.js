@@ -5,6 +5,30 @@ const farClippingPlane = 10.0;
 const fov = Math.PI * 0.5;
 const resol = 400;
 const player_speed = 2;
+class Color {
+    constructor(r, g, b, a) {
+        this.r = r;
+        this.g = g;
+        this.b = b;
+        this.a = a;
+    }
+    tostring() {
+        return `rgba(`
+            + `${Math.floor(this.r * 255)},`
+            + `${Math.floor(this.g * 255)},`
+            + `${Math.floor(this.b * 255)},`
+            + `${this.a})`;
+    }
+    brightness(factor) {
+        return new Color(factor * this.r, factor * this.g, factor * this.b, this.a);
+    }
+    static red() { return new Color(1, 0, 0, 1); }
+    static green() { return new Color(0, 1, 0, 1); }
+    static blue() { return new Color(0, 0, 1, 1); }
+    static yellow() { return new Color(1, 1, 0, 1); }
+    static purple() { return new Color(1, 0, 1, 1); }
+    static cyan() { return new Color(0, 1, 1, 1); }
+}
 class vec2 {
     constructor(x, y) {
         this.x = x;
@@ -161,7 +185,7 @@ function renderminimap(ctx, player, position, size, scene) {
         for (let x = 0; x < gridsize.x; x++) {
             const color = scene[y][x];
             if (color !== null) {
-                ctx.fillStyle = color;
+                ctx.fillStyle = color.tostring();
                 ctx.fillRect(x, y, 1, 1);
             }
         }
@@ -194,7 +218,7 @@ function renderscene(ctx, player, scene) {
                 const v = p.sub(player.position);
                 const d = vec2.fromangle(player.direction);
                 const stripheight = ctx.canvas.height / v.dot(d);
-                ctx.fillStyle = color;
+                ctx.fillStyle = color.brightness(1 / v.dot(d)).tostring();
                 ctx.fillRect(x * stripwidth, (ctx.canvas.height - stripheight) * 0.5, stripwidth, stripheight);
             }
         }
@@ -222,9 +246,9 @@ function rendergame(ctx, player, scene) {
     let scene = [
         [null, null, null, null, null, null, null, null, null, null],
         [null, null, null, null, null, null, null, null, null, null],
-        [null, null, null, "cyan", "purple", null, null, null, null, null],
-        [null, null, null, null, "white", null, null, null, null, null],
-        [null, null, "red", "green", "blue", null, null, null, null, null],
+        [null, null, null, Color.cyan(), Color.purple(), null, null, null, null, null],
+        [null, null, null, null, Color.yellow(), null, null, null, null, null],
+        [null, null, Color.red(), Color.green(), Color.blue(), null, null, null, null, null],
         [null, null, null, null, null, null, null, null, null, null],
         [null, null, null, null, null, null, null, null, null, null],
         [null, null, null, null, null, null, null, null, null, null],
