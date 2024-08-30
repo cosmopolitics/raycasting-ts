@@ -1,10 +1,10 @@
 "use strict";
 const eps = 1e-6;
-const nearClippingPlane = 1.0;
+const nearClippingPlane = 0.25;
 const farClippingPlane = 10.0;
 const fov = Math.PI * 0.5;
 const resol = 400;
-const player_speed = 0.25;
+const player_speed = 2;
 class vec2 {
     constructor(x, y) {
         this.x = x;
@@ -231,35 +231,68 @@ function rendergame(ctx, player, scene) {
         [null, null, null, null, null, null, null, null, null, null],
     ];
     const player = new Player(scenesize(scene).mul(new vec2(0.63, 0.63)), Math.PI * 1.25);
+    let movingforward = false;
+    let movingback = false;
+    let turningright = false;
+    let turningleft = false;
     window.addEventListener("keydown", (e) => {
         switch (e.code) {
             case 'KeyW':
-                {
-                    player.position = player.position
-                        .add(vec2.fromangle(player.direction).scale(player_speed));
-                    rendergame(ctx, player, scene);
-                }
+                movingforward = true;
                 break;
             case 'KeyS':
-                {
-                    player.position = player.position
-                        .sub(vec2.fromangle(player.direction).scale(player_speed));
-                    rendergame(ctx, player, scene);
-                }
-                break;
-            case 'KeyD':
-                {
-                    player.direction += Math.PI * 0.025;
-                    rendergame(ctx, player, scene);
-                }
+                movingback = true;
                 break;
             case 'KeyA':
-                {
-                    player.direction -= Math.PI * 0.025;
-                    rendergame(ctx, player, scene);
-                }
+                turningleft = true;
+                break;
+            case 'KeyD':
+                turningright = true;
                 break;
         }
+    });
+    window.addEventListener("keyup", (e) => {
+        switch (e.code) {
+            case 'KeyW':
+                movingforward = false;
+                break;
+            case 'KeyS':
+                movingback = false;
+                break;
+            case 'KeyA':
+                turningleft = false;
+                break;
+            case 'KeyD':
+                turningright = false;
+                break;
+        }
+    });
+    let prevtime = 0;
+    const frame = (timestamp) => {
+        const delta = (timestamp - prevtime) / 1000;
+        prevtime = timestamp;
+        let player_velocity = vec2.zero();
+        let angular_velocity = 0.0;
+        if (movingforward) {
+            player_velocity = player_velocity.add(vec2.fromangle(player.direction).scale(player_speed));
+        }
+        if (movingback) {
+            player_velocity = player_velocity.sub(vec2.fromangle(player.direction).scale(player_speed));
+        }
+        if (turningleft) {
+            angular_velocity -= Math.PI;
+        }
+        if (turningright) {
+            angular_velocity += Math.PI;
+        }
+        player.direction = player.direction + angular_velocity * delta;
+        player.position = player.position.add(player_velocity.scale(delta));
+        rendergame(ctx, player, scene);
+        window.requestAnimationFrame(frame);
+    };
+    window.requestAnimationFrame((timestamp) => {
+        prevtime = timestamp;
+        window.requestAnimationFrame(frame);
     });
     rendergame(ctx, player, scene);
 })();
